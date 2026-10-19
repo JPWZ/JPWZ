@@ -7,6 +7,9 @@
 <form method="post" action="/import" enctype="multipart/form-data" class="bar">
   <input type="file" name="file" accept=".csv" required><button>Importer</button></form>
 <form method="post" action="/recategorize"><button>Rejouer les règles de catégorisation</button></form>
+<h2>Sauvegarde</h2>
+<p class="sub">Télécharge une copie de la base (catégories corrigées, réglages, engagements). À faire de temps en temps.</p>
+<a href="/backup"><button type="button">Télécharger une sauvegarde</button></a>
 <h2>Paramètres</h2>
 <form method="post" action="/settings" class="bar">
   <label>Objectif d'épargne/investissement par mois (€) <input name="epargne_cible" type="number" step="10" value="{{ settings.epargne_cible }}"></label>

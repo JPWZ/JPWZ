@@ -6,7 +6,8 @@ from datetime import date
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
+from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -25,7 +26,7 @@ if os.environ.get("APP_PUBLIC") == "1" and not os.environ.get("APP_PASSWORD"):
 @app.middleware("http")
 async def require_password(request: Request, call_next):
     password = os.environ.get("APP_PASSWORD")
-    if not password:
+    if not password or request.url.path == "/health":
         return await call_next(request)
     given = ""
     header = request.headers.get("authorization", "")
@@ -79,6 +80,11 @@ def _analysis(con):
 
 def _back(request: Request, default: str) -> RedirectResponse:
     return RedirectResponse(request.headers.get("referer") or default, status_code=303)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.get("/")
@@ -172,6 +178,19 @@ def save_settings(epargne_cible: float = Form(...), livret_a_solde: float = Form
         for k, v in (("epargne_cible", epargne_cible), ("livret_a_solde", livret_a_solde)):
             con.execute("INSERT OR REPLACE INTO settings(name, value) VALUES (?,?)", (k, str(v)))
     return RedirectResponse("/settings?msg=Réglages+enregistrés", status_code=303)
+
+
+@app.get("/backup")
+def backup():
+    """Copie cohérente de la base (corrections, réglages, engagements inclus)."""
+    import sqlite3, tempfile
+    src = db.connect()
+    tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    dst = sqlite3.connect(tmp.name)
+    src.backup(dst)
+    dst.close()
+    return FileResponse(tmp.name, filename=f"budget-{date.today().isoformat()}.db",
+                        background=BackgroundTask(os.unlink, tmp.name))
 
 
 @app.post("/import")

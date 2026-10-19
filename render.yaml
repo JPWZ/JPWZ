@@ -1,0 +1,21 @@
+# Déploiement Render (Blueprint) : New + > Blueprint > choisir ce dépôt et cette branche.
+services:
+  - type: web
+    name: budget
+    runtime: docker
+    plan: starter            # un disque persistant exige une offre payante
+    region: frankfurt        # UE
+    branch: claude/determined-edison-ul7dwq
+    autoDeploy: true         # chaque push sur la branche redéploie
+    healthCheckPath: /health
+    envVars:
+      - key: APP_PUBLIC
+        value: "1"
+      - key: BUDGET_DB
+        value: /data/budget.db
+      - key: APP_PASSWORD
+        sync: false          # demandé dans le tableau de bord Render, jamais dans Git
+    disk:
+      name: budget-data
+      mountPath: /data
+      sizeGB: 1
