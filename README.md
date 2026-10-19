@@ -4,7 +4,12 @@ Suivi de dépenses personnelles : récurrents détectés, catégorisation corrig
 qu'on peut dépenser en loisirs / épargner / investir. Local, sans cloud : les données restent dans
 `data/` (ignoré par Git).
 
-## Lancer
+## Lancer (le plus simple)
+
+1. Installer Python 3.11+ (https://www.python.org/downloads/ ; sous Windows, cocher « Add python.exe to PATH »).
+2. Double-cliquer sur **`lancer.bat`** (Windows) ou **`lancer.command`** (Mac). La première fois, l'installation prend 1 à 2 minutes ; le navigateur s'ouvre ensuite sur http://localhost:8000.
+
+## Lancer (avancé)
 
 ```bash
 docker compose up --build        # http://localhost:8000
