@@ -32,6 +32,10 @@ CREATE TABLE IF NOT EXISTS key_overrides (
     key TEXT PRIMARY KEY,
     bucket TEXT NOT NULL            -- fixed | variable
 );
+CREATE TABLE IF NOT EXISTS poste_flags (
+    poste TEXT PRIMARY KEY,         -- "catégorie|sous-poste"
+    flag TEXT NOT NULL              -- essential | discretionary
+);
 CREATE TABLE IF NOT EXISTS settings (
     name TEXT PRIMARY KEY,
     value TEXT NOT NULL

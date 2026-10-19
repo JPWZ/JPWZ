@@ -102,6 +102,26 @@ def dashboard(request: Request):
     })
 
 
+@app.get("/extras")
+def extras_page(request: Request, m: str = ""):
+    con = db.connect()
+    txns, rec, keys, force_var, table, ov = _analysis(con)
+    flags = {r["poste"]: r["flag"] for r in con.execute("SELECT * FROM poste_flags")}
+    data = analysis.extras(txns, keys, force_var, flags, m or None)
+    return templates.TemplateResponse(request, "extras.html", {"d": data, "empty": not txns, "page": "extras"})
+
+
+@app.post("/flag")
+def flag(request: Request, poste: str = Form(...), flag: str = Form(...)):
+    con = db.connect()
+    with con:
+        if flag in ("essential", "discretionary"):
+            con.execute("INSERT OR REPLACE INTO poste_flags(poste, flag) VALUES (?,?)", (poste, flag))
+        else:
+            con.execute("DELETE FROM poste_flags WHERE poste=?", (poste,))
+    return _back(request, "/extras")
+
+
 @app.get("/month/{m}")
 def month_detail(request: Request, m: str):
     con = db.connect()
@@ -128,7 +148,7 @@ def override(request: Request, key: str = Form(...), bucket: str = Form(...)):
 
 
 @app.get("/transactions")
-def transactions(request: Request, m: str = "", q: str = "", cat: str = "", review: int = 0, key: str = ""):
+def transactions(request: Request, m: str = "", q: str = "", cat: str = "", review: int = 0, key: str = "", sub: str = ""):
     con = db.connect()
     months = [r[0] for r in con.execute("SELECT DISTINCT substr(date,1,7) FROM transactions ORDER BY 1 DESC")]
     m = m or (months[0] if months else "")
@@ -141,6 +161,8 @@ def transactions(request: Request, m: str = "", q: str = "", cat: str = "", revi
         sql += " AND category=?"; args.append(cat)
     if key:
         sql += " AND key=?"; args.append(key)
+    if sub:
+        sql += " AND bank_sub=?"; args.append(sub)
     if review:
         sql += " AND source='bank' AND category IN ('À catégoriser','Autres rentrées','PayPal (à détailler)','Famille & amis')"
     rows = con.execute(sql + " ORDER BY date DESC, id DESC LIMIT 500", args).fetchall()

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+{% if empty or not d.months %}
+<div class="empty"><h1>Aucune donnée</h1><p>Importe ton export CSV dans <a href="/settings">Réglages & import</a>.</p></div>
+{% else %}
+{% set s = d.summary %}
+<h1>Où part l'argent, hors charges fixes ?</h1>
+<p class="sub">Tout ce qui n'est ni une charge fixe détectée, ni un virement vers le joint ou l'épargne, ni une dépense exceptionnelle (≥ 400 €).
+Moyennes sur {{ d.complete|length }} mois complets. <strong>Compressible</strong> = ce que tu peux choisir de réduire ; change l'étiquette d'une ligne si ton avis diffère.</p>
+
+<div class="cards">
+  <div class="card"><div class="k">Hors charges fixes / mois</div><div class="v">{{ s.total|eur }}</div>
+    <div class="n">dont essentiel {{ s.essential|eur }}</div></div>
+  <div class="card"><div class="k">Compressible / mois</div><div class="v warn">{{ s.discretionary|eur }}</div>
+    <div class="n">{{ ((s.discretionary / s.total * 100) if s.total else 0)|round|int }} % du hors-fixes</div></div>
+  <div class="card"><div class="k">Si tu réduis le compressible de…</div>
+    <div class="n" style="margin-top:6px;font-size:14px;color:var(--ink)">
+      10 % : <strong class="pos">{{ s.savings[10]|eur }}</strong>/mois<br>
+      20 % : <strong class="pos">{{ s.savings[20]|eur }}</strong>/mois<br>
+      30 % : <strong class="pos">{{ s.savings[30]|eur }}</strong>/mois</div></div>
+  <div class="card"><div class="k">Exceptionnel (à part) / mois</div><div class="v">{{ s.exceptional|eur }}</div>
+    <div class="n">lissé sur 12 mois, voir plus bas</div></div>
+</div>
+
+<h2>Mois par mois</h2>
+<p class="sub">Clique sur un mois pour le détailler. <span class="lg l-ess"></span> essentiel · <span class="lg l-dis"></span> compressible · <span class="lg l-exc"></span> exceptionnel</p>
+<div class="chart">
+  {% for t in d.month_totals %}
+  {% set tot = t.essential + t.discretionary + t.exceptional %}
+  <a class="col {{ 'sel' if t.month == d.selected }} {{ 'partial' if t.partial }}" href="/extras?m={{ t.month }}" title="{{ t.month|month_label }}">
+    <span class="val">{{ (t.essential + t.discretionary)|eur }}</span>
+    <span class="stack" style="height:{{ (tot / d.max_total * 150)|round|int }}px">
+      {% if t.exceptional %}<i class="l-exc" style="height:{{ (t.exceptional / tot * 100)|round(1) }}%"></i>{% endif %}
+      <i class="l-dis" style="height:{{ (t.discretionary / tot * 100)|round(1) }}%"></i>
+      <i class="l-ess" style="height:{{ (t.essential / tot * 100)|round(1) }}%"></i>
+    </span>
+    <span class="mon">{{ t.month|month_label }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<h2>Poste par poste</h2>
+<p class="sub">Plus la case est rouge, plus le mois dépasse ta moyenne pour ce poste. Clique sur un montant pour voir les opérations.</p>
+<div class="scroll"><table class="heat">
+  <tr><th>Poste</th><th></th>
+    {% for m in d.months %}<th class="r {{ 'sel' if m == d.selected }}"><a href="/extras?m={{ m }}">{{ m[5:] }}/{{ m[2:4] }}</a></th>{% endfor %}
+    <th class="r">Moy.</th></tr>
+  {% for r in d.rows %}
+  <tr class="{{ 'ess' if r.flag == 'essential' }}">
+    <td><span class="cat">{{ r.category }}</span>{% if r.label != r.category %} › {{ r.label }}{% endif %}</td>
+    <td class="act"><form class="inline" method="post" action="/flag"><input type="hidden" name="poste" value="{{ r.poste }}">
+      <button class="pill-btn {{ r.flag }}" name="flag" value="{{ 'discretionary' if r.flag == 'essential' else 'essential' }}" title="Changer">{{ 'essentiel' if r.flag == 'essential' else 'compressible' }}</button></form></td>
+    {% for c in r.cells %}
+    <td class="r h{{ c.level }} {{ 'sel' if c.month == d.selected }}">{% if c.value %}<a href="/transactions?m={{ c.month }}&cat={{ r.category|urlencode }}{% if r.label != r.category %}&sub={{ r.sub_raw|urlencode }}{% endif %}">{{ c.value|eur }}</a>{% else %}<span class="z">·</span>{% endif %}</td>
+    {% endfor %}
+    <td class="r"><strong>{{ r.avg|eur }}</strong></td>
+  </tr>
+  {% endfor %}
+</table></div>
+
+<h2>{{ d.selected|month_label }} en détail <span class="pill">{{ d.selected_total|eur }} hors fixes</span></h2>
+<div class="two">
+  <div>
+    <h3>Plus grosses dépenses</h3>
+    <table class="det">
+      {% for o in d.top_ops %}<tr><td>{{ o.date[8:] }}/{{ o.date[5:7] }}</td><td>{{ o.label[:34] }}<br><span class="sub" style="margin:0;font-size:12px">{{ o.poste }}</span></td><td class="r">{{ o.amount|eur }}</td></tr>
+      {% else %}<tr><td class="sub">Aucune dépense.</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div>
+    <h3>Commerçants du mois</h3>
+    <table class="det">
+      {% for g in d.top_merchants %}<tr><td><a href="/transactions?m={{ d.selected }}&key={{ g.key|urlencode }}">{{ g.label[:32] }}</a></td><td class="r">{{ g.count }}×</td><td class="r">{{ g.total|eur }}</td></tr>
+      {% else %}<tr><td class="sub">Aucun commerçant.</td></tr>{% endfor %}
+    </table>
+    <h3 style="margin-top:14px">Postes au-dessus de ta moyenne ce mois-ci</h3>
+    <table class="det">
+      {% for r in d.rows if r.delta > 2000 %}<tr><td>{{ r.category }}{% if r.label != r.category %} › {{ r.label }}{% endif %}</td><td class="r">{{ r.selected|eur }}</td><td class="r neg">{{ r.delta|eur(true) }}</td></tr>
+      {% else %}<tr><td class="sub">Rien de notable.</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+
+<h2>Dépenses exceptionnelles (comptées à part)</h2>
+<table class="det">
+  {% for e in d.exceptional %}<tr><td>{{ e.date }}</td><td>{{ e.label[:50] }}</td><td>{{ e.category }}</td><td class="r">{{ e.amount|eur }}</td></tr>
+  {% else %}<tr><td class="sub">Aucune.</td></tr>{% endfor %}
+</table>
+{% endif %}
+{% endblock %}

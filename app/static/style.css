@@ -43,3 +43,22 @@ table.det tr.cat td{font-weight:600;border-top:1px solid var(--line);padding-top
 table.det td.ind{width:18px}
 .act{white-space:nowrap}.act a,.link2{font-size:12.5px;margin-left:10px;color:var(--acc);text-decoration:none;background:none;border:0;padding:0;cursor:pointer}
 a{color:var(--acc)}
+h3{font-size:14px;margin:0 0 6px;color:var(--mute);font-weight:600}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.chart{display:flex;gap:6px;align-items:flex-end;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 12px 8px;overflow-x:auto}
+.chart .col{flex:1;min-width:54px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-decoration:none;color:var(--ink);border-radius:8px;padding:2px 2px 4px}
+.chart .col:hover,.chart .col.sel{background:var(--bg)}.chart .col.sel{outline:2px solid var(--acc)}
+.chart .col.partial{opacity:.6}
+.chart .val{font-size:11.5px;color:var(--mute);margin-bottom:3px}.chart .mon{font-size:11.5px;margin-top:4px;color:var(--mute)}
+.chart .stack{display:flex;flex-direction:column;width:70%;min-height:2px;border-radius:4px 4px 0 0;overflow:hidden}
+.l-ess{background:#8da0b8}.l-dis{background:var(--acc)}.l-exc{background:repeating-linear-gradient(45deg,#d6a24a,#d6a24a 3px,#f0d49a 3px,#f0d49a 6px)}
+.lg{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin:0 2px 0 8px}
+table.heat{font-size:13px}table.heat td,table.heat th{padding:5px 7px;white-space:nowrap}
+table.heat td a{color:inherit;text-decoration:none}table.heat td a:hover{text-decoration:underline}
+table.heat .cat{font-weight:600}.z{color:var(--line)}
+table.heat tr.ess td:first-child{color:var(--mute)}
+table.heat td.h1{background:rgba(214,162,74,.14)}table.heat td.h2{background:rgba(224,120,60,.28)}table.heat td.h3{background:rgba(210,60,50,.42)}
+table.heat th.sel,table.heat td.sel{box-shadow:inset 2px 0 0 var(--acc),inset -2px 0 0 var(--acc)}
+table.heat th a{color:var(--mute);text-decoration:none}
+.pill-btn{font-size:11.5px;padding:1px 9px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--mute);cursor:pointer}
+.pill-btn.discretionary{background:rgba(47,111,237,.12);color:var(--acc);border-color:transparent}

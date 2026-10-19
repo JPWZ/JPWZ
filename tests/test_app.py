@@ -119,3 +119,15 @@ def test_forcing_a_key_to_variable_moves_it_out_of_fixed():
     assert analysis.monthly_table(t, {"ABONNEMENT X"})[0]["fixed"] == 50000
     row = analysis.monthly_table(t, set(), {"ABONNEMENT X"})[0]
     assert row["fixed"] == 0 and row["variable"] == 50000 and row["exceptional"] == 0
+
+
+def test_extras_rows_add_up_to_the_variable_bucket(con):
+    service.import_bytes(con, SAMPLE)
+    t = txns(con)
+    keys = {r["key"] for r in analysis.detect_recurring(t)}
+    table = {r["month"]: r for r in analysis.monthly_table(t, keys)}
+    d = analysis.extras(t, keys)
+    for i, m in enumerate(d["months"]):
+        assert sum(r["cells"][i]["value"] for r in d["rows"]) == table[m]["variable"]
+    assert analysis.default_flag("Alimentation", "Supermarché") == "essential"
+    assert analysis.default_flag("Alimentation", "Restaurants") == "discretionary"

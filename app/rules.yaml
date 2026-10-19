@@ -23,7 +23,7 @@
 - {match: 'BPCE FINANCEMENT', dir: out, category: Crédit conso}
 - {match: 'DIRECTION GENERALE|DGFIP', dir: out, category: Impôts et taxes}
 - {match: 'EDF|ENGIE|TOTALENERGIES', dir: out, category: Énergie}
-- {match: 'ORANGE', dir: out, category: Télécom}
+- {match: '^PRLV SEPA ORANGE', dir: out, category: Télécom}
 - {match: 'BPCE ASSURANCES|BPCE VIE|APRIL SANTE|MAIF|MACIF', dir: out, category: Assurances & mutuelle}
 - {match: 'COTIS |COMMISSION |FRAIS ', dir: out, category: Frais bancaires}
 
