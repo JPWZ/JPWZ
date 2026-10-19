@@ -1,0 +1,30 @@
+{# Une ligne du calcul, dépliable : catégories puis détail ligne à ligne. #}
+{% macro line(label, bucket, bd, n, month=None, muted=False) %}
+{% set b = bd[bucket] %}
+<details class="ln {{ 'm' if muted }}">
+  <summary><span>{{ label }}</span><span class="amt">{{ (b.total / n)|eur }}</span></summary>
+  {% if b.groups %}
+  <div class="scroll"><table class="det">
+    {% for g in b.groups %}
+    <tr class="cat"><td colspan="2">{{ g.category }}</td><td class="r">{{ (g.total / n)|eur }}</td><td class="r">{{ g.count }}</td><td></td></tr>
+    {% for it in g["items"] %}
+    <tr><td class="ind"></td>
+      <td>{{ it.label[:46] }}{% if it.override %} <span class="pill">forcé {{ 'fixe' if it.override=='fixed' else 'variable' }}</span>{% endif %}</td>
+      <td class="r">{{ (it.total / n)|eur }}</td><td class="r">{{ it.count }}</td>
+      <td class="r act">
+        {% if it.key %}
+        <a href="/transactions?m={{ month or 'all' }}&key={{ it.key|urlencode }}">opérations</a>
+        {% if bucket in ('fixed', 'variable', 'exceptional') %}
+        <form class="inline" method="post" action="/override">
+          <input type="hidden" name="key" value="{{ it.key }}">
+          {% if it.override %}<button class="link2" name="bucket" value="auto">rétablir auto</button>
+          {% elif bucket == 'fixed' %}<button class="link2" name="bucket" value="variable">→ variable</button>
+          {% else %}<button class="link2" name="bucket" value="fixed">→ fixe</button>{% endif %}
+        </form>
+        {% endif %}{% endif %}
+      </td></tr>
+    {% endfor %}{% endfor %}
+  </table></div>
+  {% else %}<p class="sub" style="padding:6px 0">Rien dans ce poste.</p>{% endif %}
+</details>
+{% endmacro %}

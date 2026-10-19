@@ -98,3 +98,24 @@ def test_summary_capacity():
               "variable": 100000, "exceptional": 0, "household": 50000, "invest": 0, "loisir": 0, "partial": False}] * 3
     s = analysis.summary(table, {"epargne_cible": "100"}, [], date(2026, 5, 1))
     assert s["capacity_base"] == 0 and s["loisir_room"] == -10000
+
+
+def test_breakdown_matches_monthly_table_and_lists_items(con):
+    service.import_bytes(con, SAMPLE)
+    t = txns(con)
+    keys = {r["key"] for r in analysis.detect_recurring(t)}
+    months = sorted({x["date"][:7] for x in t})[:3]
+    bd = analysis.breakdown(t, keys, months)
+    table = {r["month"]: r for r in analysis.monthly_table(t, keys)}
+    for bucket in ("fixed", "variable", "household"):
+        assert bd[bucket]["total"] == sum(table[m][bucket] for m in months)
+    fixed_items = [i["label"] for g in bd["fixed"]["groups"] for i in g["items"]]
+    assert "ECHEANCE PRET" in fixed_items
+
+
+def test_forcing_a_key_to_variable_moves_it_out_of_fixed():
+    t = [{"date": f"2026-0{m}-05", "label": "ABONNEMENT X", "key": "ABONNEMENT X", "category": "Shopping",
+          "kind": "expense", "amount_cents": -50000, "bank_type": "Prelevement"} for m in (1, 2, 3)]
+    assert analysis.monthly_table(t, {"ABONNEMENT X"})[0]["fixed"] == 50000
+    row = analysis.monthly_table(t, set(), {"ABONNEMENT X"})[0]
+    assert row["fixed"] == 0 and row["variable"] == 50000 and row["exceptional"] == 0

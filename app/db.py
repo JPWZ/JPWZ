@@ -28,6 +28,10 @@ CREATE TABLE IF NOT EXISTS user_rules (
     key TEXT PRIMARY KEY,
     category TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS key_overrides (
+    key TEXT PRIMARY KEY,
+    bucket TEXT NOT NULL            -- fixed | variable
+);
 CREATE TABLE IF NOT EXISTS settings (
     name TEXT PRIMARY KEY,
     value TEXT NOT NULL

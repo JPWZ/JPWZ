@@ -2,7 +2,9 @@
 {% block content %}
 <h1>Opérations</h1>
 <p class="sub">Corrige une catégorie : « tous les similaires » apprend la règle pour les prochains imports.</p>
+{% if key %}<div class="note">Filtré sur « {{ key }} » — <a href="/transactions?m=all">tout afficher</a></div>{% endif %}
 <form class="bar" method="get">
+  {% if key %}<input type="hidden" name="key" value="{{ key }}">{% endif %}
   <select name="m" onchange="this.form.submit()">
     <option value="all" {{ 'selected' if m=='all' }}>Tout</option>
     {% for x in months %}<option value="{{ x }}" {{ 'selected' if x==m }}>{{ x|month_label }}</option>{% endfor %}
@@ -13,6 +15,7 @@
   <label><input type="checkbox" name="review" value="1" {{ 'checked' if review }} onchange="this.form.submit()"> À vérifier</label>
   <button>Filtrer</button>
 </form>
+<p class="sub">{{ rows|length }} opérations · total <strong>{{ total|eur(true) }}</strong></p>
 <div class="scroll"><table>
   <tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th class="r">Montant</th></tr>
   {% for r in rows %}

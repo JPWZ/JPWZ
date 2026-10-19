@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import line with context %}
+{% block content %}
+<p class="sub"><a href="/">← Tableau de bord</a></p>
+<h1>{{ r.month|month_label }}{% if r.partial %} <span class="pill">en cours</span>{% endif %}</h1>
+<p class="sub">
+  {% if prev %}<a href="/month/{{ prev }}">← {{ prev|month_label }}</a>{% endif %}
+  {% if prev and next %} · {% endif %}
+  {% if next %}<a href="/month/{{ next }}">{{ next|month_label }} →</a>{% endif %}
+</p>
+<div class="calc">
+  {{ line("Salaire de base", "salary_base", bd, n, month) }}
+  {{ line("+ Primes", "prime", bd, n, month) }}
+  {{ line("+ Autres rentrées", "income_other", bd, n, month) }}
+  {{ line("+ Remboursements", "reimbursement", bd, n, month) }}
+  {{ line("− Charges fixes", "fixed", bd, n, month) }}
+  {{ line("− Dépenses variables", "variable", bd, n, month) }}
+  {{ line("− Dépenses exceptionnelles", "exceptional", bd, n, month) }}
+  {{ line("− Contribution au compte joint", "household", bd, n, month) }}
+  <div class="l t"><span>= Solde du mois</span><span class="{{ 'pos' if r.result>=0 else 'neg' }}">{{ r.result|eur(true) }}</span></div>
+</div>
+<h2>Hors calcul</h2>
+<div class="calc">
+  {{ line("Investi", "invest", bd, n, month, muted=true) }}
+  {{ line("Versé vers le Livret A", "savings_out", bd, n, month, muted=true) }}
+  {{ line("Repris du Livret A", "savings_in", bd, n, month, muted=true) }}
+  {{ line("Prêts reçus", "loan_in", bd, n, month, muted=true) }}
+</div>
+{% endblock %}

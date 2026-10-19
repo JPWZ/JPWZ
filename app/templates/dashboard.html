@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import line with context %}
 {% block content %}
 {% if empty %}
 <div class="empty"><h1>Aucune donnée</h1><p>Importe ton export CSV dans <a href="/settings">Réglages & import</a>.</p></div>
@@ -25,17 +26,26 @@
 </div>
 
 <h2>Le calcul, mois moyen</h2>
+<p class="sub">Clique sur une ligne pour voir ce qu'il y a derrière. Pour une opération mal rangée : « opérations » (corriger la catégorie) ou « → fixe / → variable ».</p>
 <div class="calc">
-  <div class="l"><span>Salaire de base</span><span>{{ s.salary_base|eur }}</span></div>
-  <div class="l"><span>+ Remboursements (santé, conjointe, frais pro)</span><span>{{ s.reimbursement|eur }}</span></div>
-  <div class="l"><span>− Charges fixes détectées (crédit, assurances, énergie…)</span><span>{{ s.fixed|eur }}</span></div>
-  <div class="l"><span>− Dépenses variables (courses, shopping, loisirs…)</span><span>{{ s.variable|eur }}</span></div>
-  <div class="l"><span>− Contribution au compte joint</span><span>{{ s.household|eur }}</span></div>
+  {{ line("Salaire de base", "salary_base", bd, n) }}
+  {{ line("+ Remboursements (santé, conjointe, frais pro)", "reimbursement", bd, n) }}
+  {{ line("− Charges fixes détectées (crédit, assurances, énergie…)", "fixed", bd, n) }}
+  {{ line("− Dépenses variables (courses, shopping, loisirs…)", "variable", bd, n) }}
+  {{ line("− Contribution au compte joint", "household", bd, n) }}
   <div class="l t"><span>= Capacité de base</span><span class="{{ 'pos' if s.capacity_base>=0 else 'neg' }}">{{ s.capacity_base|eur(true) }}</span></div>
-  <div class="l m"><span>+ Primes (mars, sept.…) lissées</span><span>{{ s.prime|eur }}</span></div>
-  <div class="l m"><span>+ Autres rentrées (impôt remboursé, CSE, chèques…)</span><span>{{ s.income_other|eur }}</span></div>
-  <div class="l m"><span>− Dépenses exceptionnelles (≥ 400 € isolées)</span><span>{{ s.exceptional|eur }}</span></div>
+  {{ line("+ Primes (mars, sept.…) lissées", "prime", bd, n, muted=true) }}
+  {{ line("+ Autres rentrées (impôt remboursé, CSE, chèques…)", "income_other", bd, n, muted=true) }}
+  {{ line("− Dépenses exceptionnelles (≥ 400 € isolées)", "exceptional", bd, n, muted=true) }}
   <div class="l t"><span>= Capacité lissée</span><span class="{{ 'pos' if s.capacity_smooth>=0 else 'neg' }}">{{ s.capacity_smooth|eur(true) }}</span></div>
+</div>
+<h2>Hors calcul</h2>
+<p class="sub">Ces mouvements ne sont ni des dépenses ni des revenus.</p>
+<div class="calc">
+  {{ line("Investi (PEA, crypto, Finary)", "invest", bd, n) }}
+  {{ line("Versé du compte vers le Livret A", "savings_out", bd, n) }}
+  {{ line("Repris du Livret A vers le compte", "savings_in", bd, n) }}
+  {{ line("Prêts reçus", "loan_in", bd, n) }}
 </div>
 {% if s.capacity_base < 0 %}
 <div class="note">Ton salaire seul ne couvre pas tes dépenses actuelles : l'équilibre repose sur les primes et les rentrées annexes. Vérifie les « Autres rentrées » (opérations → filtre « à vérifier ») : un remboursement d'impôt ou un chèque ne se répète pas forcément.</div>
@@ -58,10 +68,11 @@
 {% if planned %}<p class="sub">Effet sur la capacité lissée : <strong class="{{ 'pos' if s.capacity_after_planned>=0 else 'neg' }}">{{ s.capacity_after_planned|eur(true) }}/mois</strong> sur les 12 prochains mois ({{ s.planned_sum|eur(true) }} au total).</p>{% endif %}
 
 <h2>Mois par mois</h2>
+<p class="sub">Clique sur un mois pour le détail.</p>
 <div class="scroll"><table>
   <tr><th>Mois</th><th class="r">Salaire</th><th class="r">Primes</th><th class="r">Autres rentrées</th><th class="r">Fixes</th><th class="r">Variables</th><th class="r">Except.</th><th class="r">Joint</th><th class="r">Rembours.</th><th class="r">Investi</th><th class="r">Solde</th></tr>
   {% for r in table %}
-  <tr class="{{ 'partial' if r.partial }}"><td>{{ r.month|month_label }}{% if r.partial %} (en cours){% endif %}</td>
+  <tr class="{{ 'partial' if r.partial }}"><td><a href="/month/{{ r.month }}">{{ r.month|month_label }}</a>{% if r.partial %} (en cours){% endif %}</td>
     <td class="r">{{ r.salary_base|eur }}</td><td class="r">{{ r.prime|eur }}</td><td class="r">{{ r.income_other|eur }}</td>
     <td class="r">{{ (-r.fixed)|eur }}</td><td class="r">{{ (-r.variable)|eur }}</td><td class="r">{{ (-r.exceptional)|eur }}</td>
     <td class="r">{{ (-r.household)|eur }}</td><td class="r">{{ r.reimbursement|eur }}</td><td class="r">{{ r.invest|eur }}</td>

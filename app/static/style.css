@@ -30,3 +30,16 @@ form.inline{display:inline}
 .pill{font-size:12px;padding:1px 8px;border-radius:99px;background:var(--bg);color:var(--mute)}
 .note{background:var(--card);border-left:3px solid var(--warn);padding:10px 14px;border-radius:6px;margin:12px 0;color:var(--mute)}
 .empty{text-align:center;padding:60px 0;color:var(--mute)}
+details.ln{border-bottom:1px solid var(--line)}details.ln:last-child{border:0}
+details.ln summary{display:flex;justify-content:space-between;padding:7px 0;cursor:pointer;list-style:none}
+details.ln summary::-webkit-details-marker{display:none}
+details.ln summary::before{content:"▸";color:var(--mute);margin-right:8px;transition:transform .1s}
+details.ln[open] summary::before{transform:rotate(90deg)}
+details.ln summary span:first-of-type{flex:1}
+details.ln.m summary{color:var(--mute)}
+table.det{border:0;border-radius:0;background:none;font-size:13.5px;margin:0 0 8px}
+table.det td{padding:4px 8px;border:0}
+table.det tr.cat td{font-weight:600;border-top:1px solid var(--line);padding-top:8px}
+table.det td.ind{width:18px}
+.act{white-space:nowrap}.act a,.link2{font-size:12.5px;margin-left:10px;color:var(--acc);text-decoration:none;background:none;border:0;padding:0;cursor:pointer}
+a{color:var(--acc)}
