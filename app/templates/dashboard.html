@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+{% if empty %}
+<div class="empty"><h1>Aucune donnée</h1><p>Importe ton export CSV dans <a href="/settings">Réglages & import</a>.</p></div>
+{% else %}
+<h1>Combien puis-je épargner, investir, dépenser ?</h1>
+<p class="sub">Moyennes sur les {{ s.months }} derniers mois complets. Les virements vers le Livret A, le PEA et la crypto ne sont pas des dépenses.</p>
+
+<div class="cards">
+  <div class="card"><div class="k">Capacité de base / mois</div>
+    <div class="v {{ 'pos' if s.capacity_base>=0 else 'neg' }}">{{ s.capacity_base|eur(true) }}</div>
+    <div class="n">Salaire seul, sans primes ni rentrées exceptionnelles</div></div>
+  <div class="card"><div class="k">Capacité lissée / mois</div>
+    <div class="v {{ 'pos' if s.capacity_smooth>=0 else 'neg' }}">{{ s.capacity_smooth|eur(true) }}</div>
+    <div class="n">Primes et exceptionnels étalés sur 12 mois</div></div>
+  <div class="card"><div class="k">Déjà investi automatiquement</div>
+    <div class="v">{{ s.invest|eur }}</div><div class="n">PEA, crypto, Finary — par mois</div></div>
+  <div class="card"><div class="k">Loisirs possibles / mois</div>
+    <div class="v {{ 'pos' if s.loisir_room>=0 else 'neg' }}">{{ s.loisir_room|eur }}</div>
+    <div class="n">Actuel : {{ s.loisir|eur }} · en gardant {{ s.target|eur }} d'épargne</div></div>
+  <div class="card"><div class="k">Matelas de sécurité</div>
+    {% if s.livret_a %}<div class="v {{ 'warn' if s.safety_months<3 else 'pos' }}">{{ s.safety_months|round(1) }} mois</div>
+    <div class="n">Livret A {{ s.livret_a|eur }} ÷ dépenses courantes {{ s.essentials|eur }}</div>
+    {% else %}<div class="v">—</div><div class="n"><a href="/settings">Renseigne le solde de ton Livret A</a></div>{% endif %}</div>
+</div>
+
+<h2>Le calcul, mois moyen</h2>
+<div class="calc">
+  <div class="l"><span>Salaire de base</span><span>{{ s.salary_base|eur }}</span></div>
+  <div class="l"><span>+ Remboursements (santé, conjointe, frais pro)</span><span>{{ s.reimbursement|eur }}</span></div>
+  <div class="l"><span>− Charges fixes détectées (crédit, assurances, énergie…)</span><span>{{ s.fixed|eur }}</span></div>
+  <div class="l"><span>− Dépenses variables (courses, shopping, loisirs…)</span><span>{{ s.variable|eur }}</span></div>
+  <div class="l"><span>− Contribution au compte joint</span><span>{{ s.household|eur }}</span></div>
+  <div class="l t"><span>= Capacité de base</span><span class="{{ 'pos' if s.capacity_base>=0 else 'neg' }}">{{ s.capacity_base|eur(true) }}</span></div>
+  <div class="l m"><span>+ Primes (mars, sept.…) lissées</span><span>{{ s.prime|eur }}</span></div>
+  <div class="l m"><span>+ Autres rentrées (impôt remboursé, CSE, chèques…)</span><span>{{ s.income_other|eur }}</span></div>
+  <div class="l m"><span>− Dépenses exceptionnelles (≥ 400 € isolées)</span><span>{{ s.exceptional|eur }}</span></div>
+  <div class="l t"><span>= Capacité lissée</span><span class="{{ 'pos' if s.capacity_smooth>=0 else 'neg' }}">{{ s.capacity_smooth|eur(true) }}</span></div>
+</div>
+{% if s.capacity_base < 0 %}
+<div class="note">Ton salaire seul ne couvre pas tes dépenses actuelles : l'équilibre repose sur les primes et les rentrées annexes. Vérifie les « Autres rentrées » (opérations → filtre « à vérifier ») : un remboursement d'impôt ou un chèque ne se répète pas forcément.</div>
+{% endif %}
+
+<h2>Engagements prévus (12 mois)</h2>
+<table>
+  <tr><th>Quoi</th><th>Date</th><th class="r">Montant</th><th></th></tr>
+  {% for p in planned %}
+  <tr><td>{{ p.label }}</td><td>{{ p.date }}</td><td class="r">{{ p.amount_cents|eur(true) }}</td>
+    <td class="r"><form class="inline" method="post" action="/planned/{{ p.id }}/delete"><button class="link">Supprimer</button></form></td></tr>
+  {% else %}<tr><td colspan="4" style="color:var(--mute)">Rien de prévu. Ajoute l'achat de la voiture, les remboursements à ta conjointe…</td></tr>{% endfor %}
+</table>
+<form method="post" action="/planned" class="bar" style="margin-top:10px">
+  <input name="label" placeholder="Voiture — part cash" required>
+  <input name="date" type="date" required>
+  <input name="amount" type="number" step="0.01" placeholder="-8000 (sortie) / +500 (entrée)" required style="width:240px">
+  <button>Ajouter</button>
+</form>
+{% if planned %}<p class="sub">Effet sur la capacité lissée : <strong class="{{ 'pos' if s.capacity_after_planned>=0 else 'neg' }}">{{ s.capacity_after_planned|eur(true) }}/mois</strong> sur les 12 prochains mois ({{ s.planned_sum|eur(true) }} au total).</p>{% endif %}
+
+<h2>Mois par mois</h2>
+<div class="scroll"><table>
+  <tr><th>Mois</th><th class="r">Salaire</th><th class="r">Primes</th><th class="r">Autres rentrées</th><th class="r">Fixes</th><th class="r">Variables</th><th class="r">Except.</th><th class="r">Joint</th><th class="r">Rembours.</th><th class="r">Investi</th><th class="r">Solde</th></tr>
+  {% for r in table %}
+  <tr class="{{ 'partial' if r.partial }}"><td>{{ r.month|month_label }}{% if r.partial %} (en cours){% endif %}</td>
+    <td class="r">{{ r.salary_base|eur }}</td><td class="r">{{ r.prime|eur }}</td><td class="r">{{ r.income_other|eur }}</td>
+    <td class="r">{{ (-r.fixed)|eur }}</td><td class="r">{{ (-r.variable)|eur }}</td><td class="r">{{ (-r.exceptional)|eur }}</td>
+    <td class="r">{{ (-r.household)|eur }}</td><td class="r">{{ r.reimbursement|eur }}</td><td class="r">{{ r.invest|eur }}</td>
+    <td class="r {{ 'pos' if r.result>=0 else 'neg' }}">{{ r.result|eur(true) }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}

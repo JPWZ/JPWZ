@@ -1,0 +1,34 @@
+# Règles de catégorisation, évaluées dans l'ordre (la première qui correspond gagne).
+# match : regex (insensible à la casse) sur le libellé de l'opération
+# dir   : in (entrée) | out (sortie) ; min_eur : montant absolu minimum
+# Les corrections faites dans l'interface passent avant ces règles.
+
+# --- Revenus ---
+- {match: '^VIR ORANGE( SA)?\b', dir: in, min_eur: 1500, category: Salaire}
+- {match: '^VIR ORANGE( SA)?\b', dir: in, category: Remboursement frais pro}
+- {match: 'CSEC|CE ORANGE', dir: in, category: Avantages CSE}
+- {match: 'DGFIP|FINANCES PUBLIQUES', dir: in, category: Remboursement impôt}
+- {match: 'C\.P\.A\.M|HENNER|COMPLEMENTAIRE SANTE', dir: in, category: Remboursement santé}
+- {match: 'VILO LAURIE', dir: in, category: Participation conjointe}
+- {match: 'Bpce Financement', dir: in, category: Prêt reçu}
+- {match: 'AMUNDI|LIKEWIZE|REM CHQ', dir: in, category: Autres rentrées}
+
+# --- Mouvements internes ---
+- {match: 'JEAN-PHILIPPE WELTZER', category: Livret A ⇄ courant}
+- {match: 'COMPTE JOINT|VERS COMPTE JO', dir: out, category: Foyer (compte joint)}
+- {match: 'VIR SEPA PEA|VIR SEPA CRYPTO|VIR SEPA JP FINARY', dir: out, category: Investissement}
+
+# --- Charges fixes et assimilées ---
+- {match: 'ECHEANCE PRET', category: Crédit immobilier}
+- {match: 'BPCE FINANCEMENT', dir: out, category: Crédit conso}
+- {match: 'DIRECTION GENERALE|DGFIP', dir: out, category: Impôts et taxes}
+- {match: 'EDF|ENGIE|TOTALENERGIES', dir: out, category: Énergie}
+- {match: 'ORANGE', dir: out, category: Télécom}
+- {match: 'BPCE ASSURANCES|BPCE VIE|APRIL SANTE|MAIF|MACIF', dir: out, category: Assurances & mutuelle}
+- {match: 'COTIS |COMMISSION |FRAIS ', dir: out, category: Frais bancaires}
+
+# --- Ponctuels identifiés ---
+- {match: 'Armenga', dir: out, category: Juridique}
+- {match: 'EUROVIR WELTZER FA', dir: out, category: Famille & amis}
+- {match: 'ENVOI WERO|EUROVIR', dir: out, category: Famille & amis}
+- {match: '^PRLV SEPA PayPal', dir: out, category: PayPal (à détailler)}

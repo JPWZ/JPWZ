@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Réglages & import</h1>
+{% if msg %}<div class="note">{{ msg }}</div>{% endif %}
+<h2>Importer un export CSV</h2>
+<p class="sub">Export Banque Populaire (compte courant). Les doublons sont ignorés : tu peux réimporter un fichier qui chevauche le précédent. {{ n }} opérations en base.</p>
+<form method="post" action="/import" enctype="multipart/form-data" class="bar">
+  <input type="file" name="file" accept=".csv" required><button>Importer</button></form>
+<form method="post" action="/recategorize"><button>Rejouer les règles de catégorisation</button></form>
+<h2>Paramètres</h2>
+<form method="post" action="/settings" class="bar">
+  <label>Objectif d'épargne/investissement par mois (€) <input name="epargne_cible" type="number" step="10" value="{{ settings.epargne_cible }}"></label>
+  <label>Solde du Livret A (€) <input name="livret_a_solde" type="number" step="100" value="{{ settings.livret_a_solde }}"></label>
+  <button>Enregistrer</button>
+</form>
+{% endblock %}

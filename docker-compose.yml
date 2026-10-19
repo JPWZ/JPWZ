@@ -1,0 +1,8 @@
+services:
+  budget:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"   # local uniquement ; voir README pour l'accès distant
+    volumes:
+      - ./data:/data             # base SQLite et exports CSV (jamais commités)
+    restart: unless-stopped

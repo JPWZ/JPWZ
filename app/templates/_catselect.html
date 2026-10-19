@@ -1,0 +1,6 @@
+<form method="post" action="/transactions/{{ id }}/category" class="inline">
+  <select name="category" onchange="this.form.submit()">
+    {% for c in CATEGORIES %}<option {{ 'selected' if c==current }}>{{ c }}</option>{% endfor %}
+  </select>
+  {% if similar %}<label class="pill"><input type="checkbox" name="apply_all" value="1" checked style="padding:0"> tous les similaires</label>{% endif %}
+</form>

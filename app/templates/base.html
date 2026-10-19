@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Budget</title><link rel="stylesheet" href="/static/style.css"></head>
+<body>
+<nav>
+  <a href="/" class="{{ 'on' if page=='dashboard' }}">Tableau de bord</a>
+  <a href="/transactions" class="{{ 'on' if page=='transactions' }}">Opérations</a>
+  <a href="/recurring" class="{{ 'on' if page=='recurring' }}">Récurrents</a>
+  <a href="/settings" class="{{ 'on' if page=='settings' }}">Réglages & import</a>
+</nav>
+<main>{% block content %}{% endblock %}</main>
+</body></html>

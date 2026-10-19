@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dépenses récurrentes détectées</h1>
+<p class="sub">Paiements réguliers (au moins la moitié des mois, montant stable ou prélèvement). Vérifie la catégorie de chaque ligne.</p>
+<div class="scroll"><table>
+  <tr><th>Libellé</th><th>Catégorie</th><th class="r">Montant moyen</th><th class="r">Par mois</th><th>Mois</th><th>Prochain</th></tr>
+  {% for r in rec %}
+  <tr><td>{{ r.label[:45] }}</td>
+    <td>{% with id=r.id, current=r.category, similar=true %}{% include "_catselect.html" %}{% endwith %}</td>
+    <td class="r">{{ r.avg_cents|eur }}{% if not r.stable %} <span class="pill">variable</span>{% endif %}</td>
+    <td class="r">{{ r.monthly_cents|eur }}</td><td>{{ r.months }}</td><td>{{ r.next_date }}</td></tr>
+  {% endfor %}
+  <tr><th>Total</th><th></th><th></th><th class="r">{{ rec|sum(attribute='monthly_cents')|eur }}</th><th></th><th></th></tr>
+</table></div>
+{% endblock %}

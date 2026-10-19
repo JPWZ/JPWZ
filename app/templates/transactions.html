@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Opérations</h1>
+<p class="sub">Corrige une catégorie : « tous les similaires » apprend la règle pour les prochains imports.</p>
+<form class="bar" method="get">
+  <select name="m" onchange="this.form.submit()">
+    <option value="all" {{ 'selected' if m=='all' }}>Tout</option>
+    {% for x in months %}<option value="{{ x }}" {{ 'selected' if x==m }}>{{ x|month_label }}</option>{% endfor %}
+  </select>
+  <select name="cat" onchange="this.form.submit()"><option value="">Toutes catégories</option>
+    {% for c in CATEGORIES %}<option {{ 'selected' if c==cat }}>{{ c }}</option>{% endfor %}</select>
+  <input name="q" value="{{ q }}" placeholder="Rechercher">
+  <label><input type="checkbox" name="review" value="1" {{ 'checked' if review }} onchange="this.form.submit()"> À vérifier</label>
+  <button>Filtrer</button>
+</form>
+<div class="scroll"><table>
+  <tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th class="r">Montant</th></tr>
+  {% for r in rows %}
+  <tr><td>{{ r.date }}</td><td>{{ r.label[:60] }} {% if r.source=='bank' %}<span class="pill">auto banque</span>{% endif %}</td>
+    <td>{% with id=r.id, current=r.category, similar=true %}{% include "_catselect.html" %}{% endwith %}</td>
+    <td class="r {{ 'pos' if r.amount_cents>0 else '' }}">{{ r.amount_cents|eur(true) }}</td></tr>
+  {% else %}<tr><td colspan="4" class="empty">Aucune opération.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}
