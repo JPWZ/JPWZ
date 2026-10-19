@@ -1,8 +1,12 @@
+import asyncio
+import base64
+import hmac
+import os
 from datetime import date
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -12,6 +16,30 @@ from .service import import_bytes, recategorize, set_category
 
 BASE = Path(__file__).parent
 app = FastAPI(title="Budget")
+
+# Accès protégé par mot de passe dès que APP_PASSWORD est défini (obligatoire si APP_PUBLIC=1).
+if os.environ.get("APP_PUBLIC") == "1" and not os.environ.get("APP_PASSWORD"):
+    raise RuntimeError("APP_PUBLIC=1 exige APP_PASSWORD : refus de démarrer sans mot de passe.")
+
+
+@app.middleware("http")
+async def require_password(request: Request, call_next):
+    password = os.environ.get("APP_PASSWORD")
+    if not password:
+        return await call_next(request)
+    given = ""
+    header = request.headers.get("authorization", "")
+    if header.lower().startswith("basic "):
+        try:
+            given = base64.b64decode(header[6:]).decode().partition(":")[2]
+        except Exception:
+            given = ""
+    if given and hmac.compare_digest(given.encode(), password.encode()):
+        return await call_next(request)
+    await asyncio.sleep(1)  # freine les essais répétés
+    return Response("Authentification requise", status_code=401,
+                    headers={"WWW-Authenticate": 'Basic realm="Budget", charset="UTF-8"'})
+
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "templates")
 

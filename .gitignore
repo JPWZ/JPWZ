@@ -5,3 +5,4 @@ __pycache__/
 *.db
 !tests/fixtures/*.csv
 .venv/
+!.env.example
