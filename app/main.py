@@ -1,5 +1,8 @@
 import asyncio
 import base64
+import re
+import unicodedata
+from collections import Counter
 import hmac
 import os
 from datetime import date
@@ -96,6 +99,11 @@ def health():
     return {"status": "ok"}
 
 
+def _slug(text: str) -> str:
+    ascii_ = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", ascii_.lower()).strip("-") or "poste"
+
+
 @app.get("/")
 def dashboard(request: Request, m: str = ""):
     con = db.connect()
@@ -113,17 +121,24 @@ def dashboard(request: Request, m: str = ""):
         i = months.index(sel)
         row = table[i]
         gross = lambda r: r["fixed"] + r["variable"] + r["exceptional"] + r["household"]
+        similar = Counter(t["key"] for t in txns)
         by_cat: dict[str, dict] = {}
         for t in txns:
             if t["date"][:7] == sel and t["kind"] in ("expense", "household"):
-                g = by_cat.setdefault(t["category"], {"category": t["category"], "total": 0, "count": 0})
+                g = by_cat.setdefault(t["category"], {"category": t["category"], "total": 0, "count": 0, "ops": []})
                 g["total"] -= t["amount_cents"]
                 g["count"] += 1
+                g["ops"].append({"id": t["id"], "date": t["date"], "label": t["label"], "category": t["category"],
+                                 "amount": -t["amount_cents"], "similar": similar[t["key"]] - 1})
         postes = sorted((g for g in by_cat.values() if g["total"] > 0), key=lambda g: -g["total"])
         if len(postes) > 9:
             rest = postes[8:]
             postes = postes[:8] + [{"category": "Autres", "total": sum(g["total"] for g in rest),
-                                    "count": sum(g["count"] for g in rest), "detail": ", ".join(g["category"] for g in rest)}]
+                                    "count": sum(g["count"] for g in rest), "detail": ", ".join(g["category"] for g in rest),
+                                    "ops": [o for g in rest for o in g["ops"]]}]
+        for g in postes:
+            g["slug"] = _slug(g["category"])
+            g["ops"].sort(key=lambda o: (o["date"], o["id"]), reverse=True)
         chart = table[-12:]
         prev_gross = gross(table[i - 1]) if i > 0 else 0
         ctx.update({
@@ -207,9 +222,12 @@ def transactions(request: Request, m: str = "", q: str = "", cat: str = "", revi
 
 
 @app.post("/transactions/{tx_id}/category")
-def update_category(request: Request, tx_id: int, category: str = Form(...), apply_all: str = Form("")):
+def update_category(request: Request, tx_id: int, category: str = Form(...), apply_all: str = Form(""),
+                    next: str = Form("")):
     if category in CATEGORIES:
         set_category(db.connect(), tx_id, category, bool(apply_all))
+    if next.startswith("/") and not next.startswith("//"):
+        return RedirectResponse(next, status_code=303)
     return _back(request, "/transactions")
 
 

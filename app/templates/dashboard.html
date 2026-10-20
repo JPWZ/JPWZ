@@ -50,12 +50,23 @@
   </section>
   <section class="panel">
     <div class="head"><h2>Par poste</h2><span class="hint">{{ sel_month|month_long }}</span></div>
+    <p class="hint" style="margin:2px 0 0">Clique sur un poste pour voir ses opérations et les ranger ailleurs.</p>
     <div class="postes">
       {% for p in postes %}{% set st = category_style(p.category) %}
-      <div class="poste" style="--c:{{ st.color }}">
-        <div class="row">{{ cat_icon(p.category) }}<span class="lab" {% if p.detail %}title="{{ p.detail }}"{% endif %}>{{ p.category }}{% if p.detail %} <span class="hint">({{ p.detail.count(",") + 1 }})</span>{% endif %}</span><span class="amt">{{ p.total|eur }}</span></div>
-        <div class="track"><i style="width:{{ (p.total / postes_max * 100)|round }}%"></i></div>
-      </div>
+      <details class="poste" id="p-{{ p.slug }}" style="--c:{{ st.color }}">
+        <summary>
+          <div class="row">{{ cat_icon(p.category) }}<span class="lab" {% if p.detail %}title="{{ p.detail }}"{% endif %}>{{ p.category }}{% if p.detail %} <span class="hint">({{ p.detail.count(",") + 1 }})</span>{% endif %} <span class="hint">· {{ p.count }} op.</span></span><span class="amt">{{ p.total|eur }}</span><span class="chev">›</span></div>
+          <div class="track"><i style="width:{{ (p.total / postes_max * 100)|round }}%"></i></div>
+        </summary>
+        <div class="ops">
+          {% for o in p.ops %}
+          <div class="op">
+            <div class="l1"><span class="d">{{ o.date[8:] }}/{{ o.date[5:7] }}</span><span class="t" title="{{ o.label }}">{{ o.label }}</span><span class="a">{{ o.amount|eur }}</span></div>
+            {% with id=o.id, current=o.category, similar=(o.similar > 0), n=o.similar, next='/?m=' ~ sel_month ~ '#p-' ~ p.slug %}{% include "_catselect.html" %}{% endwith %}
+          </div>
+          {% endfor %}
+        </div>
+      </details>
       {% else %}<p class="hint">Aucune dépense ce mois-ci.</p>{% endfor %}
     </div>
   </section>

@@ -29,6 +29,7 @@
 </div>
 <script>
 (function(){
+  if(location.hash.indexOf('#p-')===0){var d=document.querySelector(location.hash);if(d){d.open=true;d.scrollIntoView({block:'center'})}}
   var f=document.querySelector('#dz input'),dz=document.querySelector('#dz .drop');
   f.addEventListener('change',function(){if(f.files.length)f.form.submit()});
   ['dragover','dragenter'].forEach(function(e){dz.addEventListener(e,function(ev){ev.preventDefault();dz.classList.add('over')})});

@@ -1,6 +1,7 @@
-<form method="post" action="/transactions/{{ id }}/category" class="inline">
-  <select name="category" onchange="this.form.submit()">
+<form method="post" action="/transactions/{{ id }}/category" class="inline reclass">
+  {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+  <select name="category" onchange="this.form.submit()" title="Changer de poste">
     {% for c in CATEGORIES %}<option {{ 'selected' if c==current }}>{{ c }}</option>{% endfor %}
   </select>
-  {% if similar %}<label class="pill"><input type="checkbox" name="apply_all" value="1" checked style="padding:0"> tous les similaires</label>{% endif %}
+  {% if similar %}<label class="pill" title="Applique aussi ce poste aux autres opérations du même commerçant et aux prochains imports"><input type="checkbox" name="apply_all" value="1" checked> {% if n %}+ {{ n }} similaire{{ 's' if n > 1 }}{% else %}tous les similaires{% endif %}</label>{% endif %}
 </form>

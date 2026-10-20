@@ -56,12 +56,12 @@ h2{font-size:17px;margin:34px 0 10px;font-weight:650}h3{font-size:13.5px;margin:
 .panel h2{margin:0}.panel .head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:4px}
 .panel .tot{font-size:19px;font-weight:700}.panel .hint{color:var(--mute);font-size:12.5px}
 .grid2 .panel{display:flex;flex-direction:column}
-.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;margin-top:16px}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;margin-top:16px;align-items:start}
 @media (max-width:1000px){.grid2{grid-template-columns:1fr}}
 .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
 
 /* --- graphique à barres --- */
-.bars{display:flex;gap:8px;align-items:flex-end;flex:1;min-height:240px;margin-top:18px}
+.bars{display:flex;gap:8px;align-items:flex-end;height:300px;margin-top:18px}
 .bars .col{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;color:var(--mute);font-size:12px;border-radius:8px}
 .bars .col:hover{text-decoration:none;background:var(--hl)}
 .bars .stack{width:100%;max-width:54px;display:flex;flex-direction:column-reverse;border-radius:7px 7px 0 0;overflow:hidden;min-height:3px}
@@ -74,6 +74,17 @@ h2{font-size:17px;margin:34px 0 10px;font-weight:650}h3{font-size:13.5px;margin:
 
 /* --- liste par poste --- */
 .postes{display:flex;flex-direction:column;gap:14px;margin-top:16px}
+details.poste summary{list-style:none;cursor:pointer;border-radius:10px;padding:2px 4px;margin:-2px -4px}
+details.poste summary::-webkit-details-marker{display:none}details.poste summary:hover{background:var(--hl)}
+.poste .chev{color:var(--mute);font-size:17px;width:12px;text-align:center;transition:transform .12s}
+details.poste[open] .chev{transform:rotate(90deg)}
+.ops{margin:10px 0 4px 41px;border-left:2px solid var(--line);padding-left:12px;display:flex;flex-direction:column;gap:10px}
+.op .l1{display:flex;gap:8px;align-items:baseline;font-size:13.5px}
+.op .d{color:var(--mute);font-variant-numeric:tabular-nums;flex:none}.op .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.op .a{font-weight:600;font-variant-numeric:tabular-nums;flex:none}
+.op form{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.op select{padding:3px 6px;font-size:12.5px;border-radius:8px;max-width:190px}
+.op .pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px}
 .poste .row{display:flex;align-items:center;gap:11px}.poste .lab{flex:1;font-weight:520}
 .poste .amt{font-weight:650;font-variant-numeric:tabular-nums}
 .poste .track{height:6px;border-radius:9px;background:var(--soft);margin:7px 0 0 41px;overflow:hidden}
