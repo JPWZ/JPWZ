@@ -1,21 +1,77 @@
 {% extends "base.html" %}
 {% from "_macros.html" import line with context %}
+{% from "_icons.html" import icon, cat_icon with context %}
 {% block content %}
 {% if empty %}
-<div class="empty"><h1>Aucune donnée</h1><p>Importe ton export CSV dans <a href="/settings">Réglages & import</a>.</p></div>
+<div class="empty"><h1>Aucune donnée</h1><p>Glisse ton export CSV dans « Importer des exports » à gauche, ou va dans <a href="/settings">Réglages</a>.</p></div>
 {% else %}
-<h1>Combien puis-je épargner, investir, dépenser ?</h1>
-<p class="sub">Moyennes sur les {{ s.months }} derniers mois complets. Les virements vers le Livret A, le PEA et la crypto ne sont pas des dépenses.</p>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Budget perso</p>
+    <div class="monthnav">
+      <h1>{% set ml = sel_month|month_long %}{{ ml.split(' ')[0] }} <span>{{ ml.split(' ')[1] }}</span></h1>
+      <a class="navbtn {{ '' if prev_m else 'off' }}" href="/?m={{ prev_m }}" title="Mois précédent">{{ icon('chev-left') }}</a>
+      <a class="navbtn {{ '' if next_m else 'off' }}" href="/?m={{ next_m }}" title="Mois suivant">{{ icon('chev-right') }}</a>
+    </div>
+  </div>
+  {% if sel.partial %}<span class="pill">mois en cours — chiffres provisoires</span>{% endif %}
+</div>
 
+<div class="cards">
+  <div class="card"><div class="k">Revenus du mois</div><div class="v">{{ income_m|eur }}</div>
+    <div class="n">salaire {{ sel.salary_base|eur }}{% if sel.prime %} · primes {{ sel.prime|eur }}{% endif %}</div></div>
+  <div class="card"><div class="k">Dépenses du mois</div><div class="v">{{ gross|eur }}</div>
+    <div class="n">{% if delta_pct is not none %}<span class="{{ 'neg' if delta_pct > 0 else 'pos' }}">{{ '+' if delta_pct > 0 }}{{ delta_pct }} %</span> vs {{ prev_label }}{% else %}&nbsp;{% endif %}</div></div>
+  <div class="card"><div class="k">Solde du mois</div><div class="v {{ 'pos' if sel.result >= 0 else 'neg' }}">{{ sel.result|eur(true) }}</div>
+    <div class="n">après remboursements reçus ({{ sel.reimbursement|eur }})</div></div>
+  <div class="card"><div class="k">Investi ce mois</div><div class="v">{{ sel.invest|eur }}</div>
+    <div class="n">PEA, crypto… hors dépenses</div></div>
+</div>
+
+<div class="grid2">
+  <section class="panel">
+    <div class="head"><h2>Dépenses sur 12 mois</h2><span class="tot">{{ chart_total|eur }}</span></div>
+    <p class="hint">Clique sur un mois pour l'ouvrir.</p>
+    <div class="bars">
+      {% for r in chart %}
+      {% set g = r.fixed + r.variable + r.exceptional + r.household %}
+      <a class="col {{ 'sel' if r.month == sel_month }} {{ 'partial' if r.partial }}" href="/?m={{ r.month }}" title="{{ r.month|month_long }} : {{ g|eur }}">
+        <span class="stack" style="height:{{ (g / chart_max * 85)|round|int }}%">
+          <i class="s-fix" style="height:{{ (r.fixed / g * 100)|round(1) if g else 0 }}%"></i>
+          <i class="s-joint" style="height:{{ (r.household / g * 100)|round(1) if g else 0 }}%"></i>
+          <i class="s-var" style="height:{{ (r.variable / g * 100)|round(1) if g else 0 }}%"></i>
+          <i class="s-exc" style="height:{{ (r.exceptional / g * 100)|round(1) if g else 0 }}%"></i>
+        </span>
+        <span>{{ r.month|month_label|replace(' ' ~ r.month[:4], '') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="legend"><span><i class="s-fix"></i>Charges fixes</span><span><i class="s-joint"></i>Compte joint</span><span><i class="s-var"></i>Variables</span><span><i class="s-exc"></i>Exceptionnelles</span></div>
+  </section>
+  <section class="panel">
+    <div class="head"><h2>Par poste</h2><span class="hint">{{ sel_month|month_long }}</span></div>
+    <div class="postes">
+      {% for p in postes %}{% set st = category_style(p.category) %}
+      <div class="poste" style="--c:{{ st.color }}">
+        <div class="row">{{ cat_icon(p.category) }}<span class="lab" {% if p.detail %}title="{{ p.detail }}"{% endif %}>{{ p.category }}{% if p.detail %} <span class="hint">({{ p.detail.count(",") + 1 }})</span>{% endif %}</span><span class="amt">{{ p.total|eur }}</span></div>
+        <div class="track"><i style="width:{{ (p.total / postes_max * 100)|round }}%"></i></div>
+      </div>
+      {% else %}<p class="hint">Aucune dépense ce mois-ci.</p>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<h2>Combien puis-je épargner, investir, dépenser ?</h2>
+<p class="sub">Moyennes sur les {{ s.months }} derniers mois complets. Les virements vers le Livret A, le PEA et la crypto ne sont pas des dépenses.</p>
 <div class="cards">
   <div class="card"><div class="k">Capacité de base / mois</div>
     <div class="v {{ 'pos' if s.capacity_base>=0 else 'neg' }}">{{ s.capacity_base|eur(true) }}</div>
-    <div class="n">Salaire seul, sans primes ni rentrées exceptionnelles</div></div>
+    <div class="n">Salaire seul, sans primes ni exceptionnels</div></div>
   <div class="card"><div class="k">Capacité lissée / mois</div>
     <div class="v {{ 'pos' if s.capacity_smooth>=0 else 'neg' }}">{{ s.capacity_smooth|eur(true) }}</div>
     <div class="n">Primes et exceptionnels étalés sur 12 mois</div></div>
-  <div class="card"><div class="k">Déjà investi automatiquement</div>
-    <div class="v">{{ s.invest|eur }}</div><div class="n">PEA, crypto, Finary — par mois</div></div>
+  <div class="card"><div class="k">Déjà investi / mois</div>
+    <div class="v">{{ s.invest|eur }}</div><div class="n">PEA, crypto, Finary</div></div>
   <div class="card"><div class="k">Loisirs possibles / mois</div>
     <div class="v {{ 'pos' if s.loisir_room>=0 else 'neg' }}">{{ s.loisir_room|eur }}</div>
     <div class="n">Actuel : {{ s.loisir|eur }} · en gardant {{ s.target|eur }} d'épargne</div></div>
@@ -39,6 +95,10 @@
   {{ line("− Dépenses exceptionnelles (≥ 400 € isolées)", "exceptional", bd, n, muted=true) }}
   <div class="l t"><span>= Capacité lissée</span><span class="{{ 'pos' if s.capacity_smooth>=0 else 'neg' }}">{{ s.capacity_smooth|eur(true) }}</span></div>
 </div>
+{% if s.capacity_base < 0 %}
+<div class="note">Ton salaire seul ne couvre pas tes dépenses actuelles : l'équilibre repose sur les primes et les rentrées annexes. Vérifie les « Autres rentrées » (Opérations → filtre « À vérifier ») : un remboursement d'impôt ou un chèque ne se répète pas forcément.</div>
+{% endif %}
+
 <h2>Hors calcul</h2>
 <p class="sub">Ces mouvements ne sont ni des dépenses ni des revenus.</p>
 <div class="calc">
@@ -47,9 +107,6 @@
   {{ line("Repris du Livret A vers le compte", "savings_in", bd, n) }}
   {{ line("Prêts reçus", "loan_in", bd, n) }}
 </div>
-{% if s.capacity_base < 0 %}
-<div class="note">Ton salaire seul ne couvre pas tes dépenses actuelles : l'équilibre repose sur les primes et les rentrées annexes. Vérifie les « Autres rentrées » (opérations → filtre « à vérifier ») : un remboursement d'impôt ou un chèque ne se répète pas forcément.</div>
-{% endif %}
 
 <h2>Engagements prévus (12 mois)</h2>
 <table>
@@ -59,16 +116,15 @@
     <td class="r"><form class="inline" method="post" action="/planned/{{ p.id }}/delete"><button class="link">Supprimer</button></form></td></tr>
   {% else %}<tr><td colspan="4" style="color:var(--mute)">Rien de prévu. Ajoute l'achat de la voiture, les remboursements à ta conjointe…</td></tr>{% endfor %}
 </table>
-<form method="post" action="/planned" class="bar" style="margin-top:10px">
+<form method="post" action="/planned" class="bar" style="margin-top:12px">
   <input name="label" placeholder="Voiture — part cash" required>
   <input name="date" type="date" required>
-  <input name="amount" type="number" step="0.01" placeholder="-8000 (sortie) / +500 (entrée)" required style="width:240px">
+  <input name="amount" type="number" step="0.01" placeholder="-8000 (sortie) / +500 (entrée)" required style="width:250px">
   <button>Ajouter</button>
 </form>
 {% if planned %}<p class="sub">Effet sur la capacité lissée : <strong class="{{ 'pos' if s.capacity_after_planned>=0 else 'neg' }}">{{ s.capacity_after_planned|eur(true) }}/mois</strong> sur les 12 prochains mois ({{ s.planned_sum|eur(true) }} au total).</p>{% endif %}
 
 <h2>Mois par mois</h2>
-<p class="sub">Clique sur un mois pour le détail.</p>
 <div class="scroll"><table>
   <tr><th>Mois</th><th class="r">Salaire</th><th class="r">Primes</th><th class="r">Autres rentrées</th><th class="r">Fixes</th><th class="r">Variables</th><th class="r">Except.</th><th class="r">Joint</th><th class="r">Rembours.</th><th class="r">Investi</th><th class="r">Solde</th></tr>
   {% for r in table %}

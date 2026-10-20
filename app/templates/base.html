@@ -1,13 +1,42 @@
+{% from "_icons.html" import icon with context %}
 <!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Budget</title><link rel="stylesheet" href="/static/style.css"></head>
+<html lang="fr" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Budget perso</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="/static/style.css"></head>
 <body>
-<nav>
-  <a href="/" class="{{ 'on' if page=='dashboard' }}">Tableau de bord</a>
-  <a href="/extras" class="{{ 'on' if page=='extras' }}">Où couper</a>
-  <a href="/transactions" class="{{ 'on' if page=='transactions' }}">Opérations</a>
-  <a href="/recurring" class="{{ 'on' if page=='recurring' }}">Récurrents</a>
-  <a href="/settings" class="{{ 'on' if page=='settings' }}">Réglages & import</a>
-</nav>
+<div class="shell">
+<aside class="side">
+  <a class="brand" href="/"><span class="logo">{{ icon('check', 20) }}</span>
+    <span><strong>Budget perso</strong><small>Dépenses &amp; épargne</small></span></a>
+  <nav>
+    <a href="/" class="{{ 'on' if page=='dashboard' }}">{{ icon('grid') }}<span>Tableau de bord</span></a>
+    <a href="/extras" class="{{ 'on' if page=='extras' }}">{{ icon('scissors') }}<span>Où couper</span></a>
+    <a href="/transactions" class="{{ 'on' if page=='transactions' }}">{{ icon('list') }}<span>Opérations</span></a>
+    <a href="/recurring" class="{{ 'on' if page=='recurring' }}">{{ icon('repeat') }}<span>Récurrents</span></a>
+    <a href="/settings" class="{{ 'on' if page=='settings' }}">{{ icon('sliders') }}<span>Réglages</span></a>
+  </nav>
+  <div class="side-bottom">
+    <form method="post" action="/import" enctype="multipart/form-data" id="dz">
+      <label class="drop">{{ icon('upload') }}<span><strong>Importer des exports</strong><small>ou glisse-les ici (CSV)</small></span>
+        <input type="file" name="files" accept=".csv" multiple hidden></label>
+    </form>
+    <div class="me"><span class="avatar">{{ (user_name or 'M')[0]|upper }}</span><span class="who">{{ user_name }}</span>
+      <button type="button" class="ghost" id="theme" title="Changer de thème">{{ icon('sun') }}</button></div>
+  </div>
+</aside>
 <main>{% block content %}{% endblock %}</main>
+</div>
+<script>
+(function(){
+  var f=document.querySelector('#dz input'),dz=document.querySelector('#dz .drop');
+  f.addEventListener('change',function(){if(f.files.length)f.form.submit()});
+  ['dragover','dragenter'].forEach(function(e){dz.addEventListener(e,function(ev){ev.preventDefault();dz.classList.add('over')})});
+  ['dragleave','drop'].forEach(function(e){dz.addEventListener(e,function(){dz.classList.remove('over')})});
+  dz.addEventListener('drop',function(ev){ev.preventDefault();f.files=ev.dataTransfer.files;if(f.files.length)f.form.submit()});
+  document.getElementById('theme').addEventListener('click',function(){
+    var d=document.documentElement,n=d.dataset.theme==='dark'?'light':'dark';d.dataset.theme=n;
+    try{localStorage.setItem('theme',n)}catch(e){}});
+})();
+</script>
 </body></html>

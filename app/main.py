@@ -5,6 +5,8 @@ import os
 from datetime import date
 from pathlib import Path
 
+from typing import List
+
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask
@@ -13,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 
 from . import analysis, db
 from .categorize import CATEGORIES
+from .ui import ICONS, category_style
 from .service import import_bytes, recategorize, set_category
 
 BASE = Path(__file__).parent
@@ -44,6 +47,8 @@ async def require_password(request: Request, call_next):
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "templates")
 
+MONTHS_LONG = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre",
+               "octobre", "novembre", "décembre"]
 MONTHS_FR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 
 
@@ -61,6 +66,10 @@ def month_label(m: str) -> str:
 
 templates.env.filters["eur"] = eur
 templates.env.filters["month_label"] = month_label
+templates.env.filters["month_long"] = lambda m: f"{MONTHS_LONG[int(m[5:7]) - 1].capitalize()} {m[:4]}"
+templates.env.globals["ICONS"] = ICONS
+templates.env.globals["category_style"] = category_style
+templates.env.globals["user_name"] = os.environ.get("BUDGET_USER", "Jean-Philippe")
 templates.env.globals["CATEGORIES"] = CATEGORIES
 
 
@@ -88,7 +97,7 @@ def health():
 
 
 @app.get("/")
-def dashboard(request: Request):
+def dashboard(request: Request, m: str = ""):
     con = db.connect()
     txns, rec, keys, force_var, table, ov = _analysis(con)
     planned = [dict(r) for r in con.execute("SELECT * FROM planned ORDER BY date")]
@@ -96,10 +105,36 @@ def dashboard(request: Request):
     s = analysis.summary(table, settings, planned, date.today())
     window = [r["month"] for r in table if not r["partial"]][-12:]
     bd = analysis.breakdown(txns, keys, window, force_var, ov)
-    return templates.TemplateResponse(request, "dashboard.html", {
-        "s": s, "table": table[-13:][::-1], "planned": planned, "settings": settings,
-        "bd": bd, "n": len(window) or 1, "month": None, "empty": not txns, "page": "dashboard",
-    })
+    ctx = {"s": s, "table": table[-13:][::-1], "planned": planned, "settings": settings,
+           "bd": bd, "n": len(window) or 1, "month": None, "empty": not txns, "page": "dashboard"}
+    if table:
+        months = [r["month"] for r in table]
+        sel = m if m in months else months[-1]
+        i = months.index(sel)
+        row = table[i]
+        gross = lambda r: r["fixed"] + r["variable"] + r["exceptional"] + r["household"]
+        by_cat: dict[str, dict] = {}
+        for t in txns:
+            if t["date"][:7] == sel and t["kind"] in ("expense", "household"):
+                g = by_cat.setdefault(t["category"], {"category": t["category"], "total": 0, "count": 0})
+                g["total"] -= t["amount_cents"]
+                g["count"] += 1
+        postes = sorted((g for g in by_cat.values() if g["total"] > 0), key=lambda g: -g["total"])
+        if len(postes) > 9:
+            rest = postes[8:]
+            postes = postes[:8] + [{"category": "Autres", "total": sum(g["total"] for g in rest),
+                                    "count": sum(g["count"] for g in rest), "detail": ", ".join(g["category"] for g in rest)}]
+        chart = table[-12:]
+        prev_gross = gross(table[i - 1]) if i > 0 else 0
+        ctx.update({
+            "sel": row, "sel_month": sel, "prev_m": months[i - 1] if i > 0 else None,
+            "next_m": months[i + 1] if i + 1 < len(months) else None, "postes": postes,
+            "postes_max": postes[0]["total"] if postes else 1, "gross": gross(row),
+            "delta_pct": round((gross(row) - prev_gross) / prev_gross * 100) if prev_gross else None,
+            "prev_label": MONTHS_LONG[int(months[i - 1][5:7]) - 1] if i > 0 else "",
+            "chart": chart, "chart_max": max((gross(r) for r in chart), default=1) or 1,
+            "chart_total": sum(gross(r) for r in chart), "income_m": row["income"] + row["income_other"]})
+    return templates.TemplateResponse(request, "dashboard.html", ctx)
 
 
 @app.get("/extras")
@@ -216,14 +251,16 @@ def backup():
 
 
 @app.post("/import")
-async def import_file(file: UploadFile = File(...)):
+async def import_file(files: List[UploadFile] = File(...)):
     con = db.connect()
-    try:
-        added, total = import_bytes(con, await file.read())
-        msg = f"{added} nouvelles opérations ({total} lues)."
-    except ValueError as e:
-        msg = str(e)
-    return RedirectResponse(f"/settings?msg={msg}", status_code=303)
+    msgs = []
+    for f in files:
+        try:
+            added, total = import_bytes(con, await f.read())
+            msgs.append(f"{f.filename} : {added} nouvelles opérations ({total} lues)")
+        except ValueError as e:
+            msgs.append(f"{f.filename} : {e}")
+    return RedirectResponse("/settings?msg=" + " — ".join(msgs), status_code=303)
 
 
 @app.post("/recategorize")
