@@ -75,7 +75,21 @@ def _migrate(con) -> None:
     add("transactions", "label_orig", "TEXT")
     add("transactions", "sub_custom", "TEXT")
     add("planned", "source", "TEXT NOT NULL DEFAULT 'manual'")
+    _rename_categories(con)
     con.commit()
+
+
+def _rename_categories(con) -> None:
+    """Fusion de catégories : réécrit opérations, règles apprises et étiquettes essentiel/compressible."""
+    from .categorize import RENAMES
+    for old, new in RENAMES.items():
+        con.execute("UPDATE transactions SET category=? WHERE category=?", (new, old))
+        for r in con.execute("SELECT key FROM user_rules WHERE category=?", (old,)).fetchall():
+            con.execute("INSERT OR REPLACE INTO user_rules(key, category) VALUES (?,?)", (r["key"], new))
+        for r in con.execute("SELECT poste, flag FROM poste_flags WHERE poste LIKE ?", (old + "|%",)).fetchall():
+            new_poste = new + "|" + r["poste"].split("|", 1)[1]
+            con.execute("INSERT OR IGNORE INTO poste_flags(poste, flag) VALUES (?,?)", (new_poste, r["flag"]))
+            con.execute("DELETE FROM poste_flags WHERE poste=?", (r["poste"],))
 
 
 def get_settings(con) -> dict:

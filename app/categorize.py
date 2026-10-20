@@ -31,9 +31,8 @@ CATEGORIES: dict[str, str] = {
     "Alimentation": "expense",
     "Transports": "expense",
     "Santé": "expense",
-    "Shopping": "expense",
+    "Shopping & loisirs": "expense",
     "PayPal (à détailler)": "expense",
-    "Loisirs & vacances": "expense",
     "Abonnements & services": "expense",
     "Juridique": "expense",
     "Famille & amis": "expense",
@@ -44,22 +43,25 @@ CATEGORIES: dict[str, str] = {
     "Livret A ⇄ courant": "savings_move",
 }
 
-LOISIR_CATEGORIES = {"Loisirs & vacances"}
+LOISIR_CATEGORIES = {"Shopping & loisirs"}
 
 # Repli sur la catégorie de la banque quand aucune règle ne correspond
 BANK_MAP = {
     "banque et assurances": "Assurances & mutuelle",
-    "shopping et services": "Shopping",
+    "shopping et services": "Shopping & loisirs",
     "alimentation": "Alimentation",
     "logement - maison": "Logement",
     "impots et taxes": "Impôts et taxes",
-    "loisirs et vacances": "Loisirs & vacances",
+    "loisirs et vacances": "Shopping & loisirs",
     "transports": "Transports",
     "sante": "Santé",
     "juridique et administratif": "Juridique",
     "revenus et rentrees d'argent": "Autres rentrées",
     "a categoriser - rentree d'argent": "Autres rentrées",
 }
+
+# Anciens noms de catégories (fusionnés) -> nom actuel ; appliqué à la base existante au démarrage
+RENAMES = {"Shopping": "Shopping & loisirs", "Loisirs & vacances": "Shopping & loisirs"}
 
 _RULES_PATH = Path(__file__).with_name("rules.yaml")
 _rules = None

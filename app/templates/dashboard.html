@@ -83,7 +83,7 @@
     <div class="n">Primes et exceptionnels étalés sur 12 mois</div></div>
   <div class="card"><div class="k">Déjà investi / mois</div>
     <div class="v">{{ s.invest|eur }}</div><div class="n">PEA, crypto, Finary</div></div>
-  <div class="card"><div class="k">Loisirs possibles / mois</div>
+  <div class="card"><div class="k">Shopping &amp; loisirs possibles / mois</div>
     <div class="v {{ 'pos' if s.loisir_room>=0 else 'neg' }}">{{ s.loisir_room|eur }}</div>
     <div class="n">Actuel : {{ s.loisir|eur }} · en gardant {{ s.target|eur }} d'épargne</div></div>
   <div class="card"><div class="k">Matelas de sécurité</div>

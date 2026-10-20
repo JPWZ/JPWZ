@@ -61,10 +61,10 @@ def test_salary_rule_needs_min_amount():
 def test_user_correction_applies_to_similar_and_survives_recategorize(con):
     service.import_bytes(con, SAMPLE)
     tx = next(t for t in txns(con) if t["label"] == "SUPERMARCHE FR VILLE")
-    service.set_category(con, tx["id"], "Shopping", apply_all=True)
-    assert all(t["category"] == "Shopping" for t in txns(con) if t["label"] == "SUPERMARCHE FR VILLE")
+    service.set_category(con, tx["id"], "Shopping & loisirs", apply_all=True)
+    assert all(t["category"] == "Shopping & loisirs" for t in txns(con) if t["label"] == "SUPERMARCHE FR VILLE")
     service.recategorize(con)
-    assert all(t["category"] == "Shopping" for t in txns(con) if t["label"] == "SUPERMARCHE FR VILLE")
+    assert all(t["category"] == "Shopping & loisirs" for t in txns(con) if t["label"] == "SUPERMARCHE FR VILLE")
 
 
 def test_normalize_key_ignores_digits():
@@ -114,7 +114,7 @@ def test_breakdown_matches_monthly_table_and_lists_items(con):
 
 
 def test_forcing_a_key_to_variable_moves_it_out_of_fixed():
-    t = [{"date": f"2026-0{m}-05", "label": "ABONNEMENT X", "key": "ABONNEMENT X", "category": "Shopping",
+    t = [{"date": f"2026-0{m}-05", "label": "ABONNEMENT X", "key": "ABONNEMENT X", "category": "Shopping & loisirs",
           "kind": "expense", "amount_cents": -50000, "bank_type": "Prelevement"} for m in (1, 2, 3)]
     assert analysis.monthly_table(t, {"ABONNEMENT X"})[0]["fixed"] == 50000
     row = analysis.monthly_table(t, set(), {"ABONNEMENT X"})[0]

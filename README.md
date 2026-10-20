@@ -35,7 +35,7 @@ En ligne de commande : `python -m app.cli import data/export.csv`.
 | Primes | Part d'un salaire au-delà de 1,25 × le salaire médian |
 | Capacité de base | Salaire + remboursements − fixes − variables − compte joint |
 | Capacité lissée | Capacité de base + primes + autres rentrées − exceptionnelles (moyenne 12 mois complets) |
-| Loisirs possibles | Loisirs actuels + capacité lissée − objectif d'épargne |
+| Shopping & loisirs possibles | Dépense actuelle en shopping & loisirs + capacité lissée − objectif d'épargne |
 
 Catégories : `app/rules.yaml` (ordre = priorité). Les corrections faites dans l'interface passent
 avant les règles.
