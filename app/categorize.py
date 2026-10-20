@@ -34,6 +34,7 @@ CATEGORIES: dict[str, str] = {
     "Shopping": "expense",
     "PayPal (à détailler)": "expense",
     "Loisirs & vacances": "expense",
+    "Abonnements & services": "expense",
     "Juridique": "expense",
     "Famille & amis": "expense",
     "À catégoriser": "expense",
@@ -99,7 +100,8 @@ def categorize(tx: dict, user_rules: dict[str, str] | None = None) -> tuple[str,
             continue
         if r.get("min_eur") and abs(amount) < r["min_eur"] * 100:
             continue
-        if r["_re"].search(tx["label"]):
+        text = tx.get("merchant") if r.get("field") == "merchant" else tx["label"]
+        if text and r["_re"].search(text):
             return r["category"], "rule"
     bank = BANK_MAP.get(tx.get("bank_cat", "").lower())
     if bank and (direction == "out" or kind_of(bank) != "expense"):
@@ -107,3 +109,11 @@ def categorize(tx: dict, user_rules: dict[str, str] | None = None) -> tuple[str,
     if direction == "in":
         return "Autres rentrées", "bank"
     return "À catégoriser", "bank"
+
+
+def merchant_sub(merchant: str) -> str | None:
+    """Sous-poste associé à un commerçant PayPal (règles « field: merchant »)."""
+    for r in load_rules():
+        if r.get("field") == "merchant" and r.get("sub") and r["_re"].search(merchant):
+            return r["sub"]
+    return None

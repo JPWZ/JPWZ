@@ -131,3 +131,48 @@ def test_extras_rows_add_up_to_the_variable_bucket(con):
         assert sum(r["cells"][i]["value"] for r in d["rows"]) == table[m]["variable"]
     assert analysis.default_flag("Alimentation", "Supermarché") == "essential"
     assert analysis.default_flag("Alimentation", "Restaurants") == "discretionary"
+
+
+# --- PayPal -----------------------------------------------------------------------------------
+
+from app.importers import paypal  # noqa: E402
+
+PAYPAL = (Path(__file__).parent / "fixtures" / "paypal_sample.csv").read_bytes()
+
+
+def test_paypal_events_merchants_installments_and_pending():
+    events, pending = paypal.build_events(paypal.parse(PAYPAL))
+    by_amount = {}
+    for e in events:
+        by_amount.setdefault(e["amount_cents"], []).append(e)
+    assert by_amount[3000][0]["merchant"] == "Boutique Test"            # suffixe juridique retiré
+    assert [e["note"] for e in by_amount[10000]] == ["échéance 1/4", "échéance 2/4"]
+    assert all(e["merchant"] == "Gros Magasin" for e in by_amount[10000])
+    assert by_amount[920][0]["note"] == "USD"                           # paiement en devise
+    assert by_amount[102550][0]["merchant"] == "Virement à Jean Dupont"  # montant avec espace des milliers
+    assert [(p["k"], p["amount_cents"]) for p in pending] == [(3, 10000), (4, 10000)]
+
+
+def test_match_events_pairs_same_amounts_by_closest_date():
+    events = [{"amount_cents": 199, "date": "2026-03-10", "merchant": "Apple"},
+              {"amount_cents": 199, "date": "2026-03-24", "merchant": "Google"}]
+    bank = [(1, "2026-03-27", 199), (2, "2026-03-12", 199), (3, "2026-05-01", 199)]
+    got = service.match_events(bank, events)
+    assert got[2]["merchant"] == "Apple" and got[1]["merchant"] == "Google" and 3 not in got
+
+
+def test_paypal_import_relabels_bank_debits_and_categorises(con):
+    bank_csv = ("Date de comptabilisation;Libelle simplifie;Libelle operation;Reference;Informations complementaires;"
+                "Type operation;Categorie;Sous categorie;Debit;Credit;Date operation;Date de valeur;Pointage operation\r\n"
+                + "".join(f"{d};PayPal;PRLV SEPA PayPal Europe S.a.r.l.;R{i};x;Prelevement;Shopping et services;"
+                          f"Shopping et services - autre;-{a};;{d};{d};0\r\n"
+                          for i, (d, a) in enumerate([("12/03/2026", "30,00"), ("14/03/2026", "100,00")]))).encode("cp1252")
+    service.import_any(con, bank_csv)
+    assert {t["category"] for t in txns(con)} == {"PayPal (à détailler)"}
+    msg = service.import_any(con, PAYPAL)
+    assert "2 prélèvements" in msg
+    t = {x["merchant"]: x for x in txns(con)}
+    assert t["Boutique Test"]["label"] == "PayPal · Boutique Test" and t["Boutique Test"]["label_orig"].startswith("PRLV SEPA PayPal")
+    assert t["Gros Magasin"]["label"].endswith("(échéance 1/4)")
+    # l'import est rejouable sans doublon ni dérive
+    assert service.import_any(con, PAYPAL) and len(txns(con)) == 2

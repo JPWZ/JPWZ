@@ -36,6 +36,13 @@ CREATE TABLE IF NOT EXISTS poste_flags (
     poste TEXT PRIMARY KEY,         -- "catégorie|sous-poste"
     flag TEXT NOT NULL              -- essential | discretionary
 );
+CREATE TABLE IF NOT EXISTS paypal_events (
+    tx_id TEXT PRIMARY KEY,
+    date TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    merchant TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT ''
+);
 CREATE TABLE IF NOT EXISTS settings (
     name TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -54,7 +61,21 @@ def connect() -> sqlite3.Connection:
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    _migrate(con)
     return con
+
+
+def _migrate(con) -> None:
+    """Ajoute les colonnes apparues après la première version, sans toucher aux données."""
+    def add(table, column, ddl):
+        cols = {r["name"] for r in con.execute(f"PRAGMA table_info({table})")}
+        if column not in cols:
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+    add("transactions", "merchant", "TEXT")
+    add("transactions", "label_orig", "TEXT")
+    add("transactions", "sub_custom", "TEXT")
+    add("planned", "source", "TEXT NOT NULL DEFAULT 'manual'")
+    con.commit()
 
 
 def get_settings(con) -> dict:

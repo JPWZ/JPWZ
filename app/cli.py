@@ -2,7 +2,7 @@
 import argparse
 
 from . import db
-from .service import import_bytes, recategorize
+from .service import import_any, recategorize
 
 
 def main():
@@ -16,8 +16,7 @@ def main():
     con = db.connect()
     if args.cmd == "import":
         with open(args.path, "rb") as f:
-            added, total = import_bytes(con, f.read(), args.account)
-        print(f"{added} nouvelles opérations ({total} lues dans le fichier).")
+            print(import_any(con, f.read(), args.account))
     else:
         print(f"{recategorize(con)} opérations recatégorisées.")
 

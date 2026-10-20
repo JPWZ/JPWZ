@@ -112,7 +112,7 @@
 <table>
   <tr><th>Quoi</th><th>Date</th><th class="r">Montant</th><th></th></tr>
   {% for p in planned %}
-  <tr><td>{{ p.label }}</td><td>{{ p.date }}</td><td class="r">{{ p.amount_cents|eur(true) }}</td>
+  <tr><td>{{ p.label }}{% if p.source == "paypal" %} <span class="pill">PayPal</span>{% endif %}</td><td>{{ p.date }}</td><td class="r">{{ p.amount_cents|eur(true) }}</td>
     <td class="r"><form class="inline" method="post" action="/planned/{{ p.id }}/delete"><button class="link">Supprimer</button></form></td></tr>
   {% else %}<tr><td colspan="4" style="color:var(--mute)">Rien de prévu. Ajoute l'achat de la voiture, les remboursements à ta conjointe…</td></tr>{% endfor %}
 </table>

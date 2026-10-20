@@ -16,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 from . import analysis, db
 from .categorize import CATEGORIES
 from .ui import ICONS, category_style
-from .service import import_bytes, recategorize, set_category
+from .service import import_any, recategorize, set_category
 
 BASE = Path(__file__).parent
 app = FastAPI(title="Budget")
@@ -256,8 +256,7 @@ async def import_file(files: List[UploadFile] = File(...)):
     msgs = []
     for f in files:
         try:
-            added, total = import_bytes(con, await f.read())
-            msgs.append(f"{f.filename} : {added} nouvelles opérations ({total} lues)")
+            msgs.append(f"{f.filename} : {import_any(con, await f.read())}")
         except ValueError as e:
             msgs.append(f"{f.filename} : {e}")
     return RedirectResponse("/settings?msg=" + " — ".join(msgs), status_code=303)

@@ -32,3 +32,14 @@
 - {match: 'EUROVIR WELTZER FA', dir: out, category: Famille & amis}
 - {match: 'ENVOI WERO|EUROVIR', dir: out, category: Famille & amis}
 - {match: '^PRLV SEPA PayPal', dir: out, category: PayPal (à détailler)}
+
+# --- Abonnements repérés sur le libellé bancaire ---
+- {match: 'BLIZZARD|ALLDEBRID|AMAZON PRIME|OPENAI|ANTHROPIC|FINARY PLUS', dir: out, category: Abonnements & services}
+
+# --- Commerçants PayPal (rattachés via l'export PayPal ; field: merchant) ---
+- {field: merchant, match: '^Virement à', category: Famille & amis}
+- {field: merchant, match: 'Apple|Google|Zwift|Strava|Dashlane|21 Draw', category: Abonnements & services, sub: Abonnements}
+- {field: merchant, match: 'Ryanair|Transavia|Accor|Airbnb|Booking', category: Loisirs & vacances, sub: Voyages}
+- {field: merchant, match: 'Nintendo|G2G|Kinguin', category: Loisirs & vacances, sub: Jeux vidéo}
+- {field: merchant, match: 'Decathlon', category: Loisirs & vacances, sub: Sport et équipement}
+- {field: merchant, match: 'Les Secrets du Chef', category: Alimentation, sub: Cuisine}

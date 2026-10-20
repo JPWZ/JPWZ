@@ -212,9 +212,10 @@ ESSENTIAL_CATEGORIES = {"Santé", "Logement", "Juridique", "Impôts et taxes", "
 
 def poste_of(t: dict) -> tuple[str, str]:
     cat = t["category"]
-    if cat in WHOLE_CATEGORY or not t.get("bank_sub"):
+    sub = t.get("sub_custom") or t.get("bank_sub")
+    if cat in WHOLE_CATEGORY or not sub:
         return cat, cat
-    return cat, SUB_LABELS.get(t["bank_sub"], t["bank_sub"])
+    return cat, SUB_LABELS.get(sub, sub)
 
 
 def default_flag(category: str, label: str) -> str:
@@ -244,7 +245,7 @@ def extras(txns: list[dict], recurring_keys, force_variable=frozenset(), flag_ov
         for bucket, amount in classify(t, base, recurring_keys, force_variable):
             if bucket == "variable":
                 cat, label = poste_of(t)
-                r = rows.setdefault((cat, label), {"category": cat, "label": label, "sub_raw": t.get("bank_sub", ""),
+                r = rows.setdefault((cat, label), {"category": cat, "label": label, "sub_raw": t.get("sub_custom") or t.get("bank_sub", ""),
                                                     "by_month": defaultdict(int)})
                 r["by_month"][m] += amount
                 if m == selected:

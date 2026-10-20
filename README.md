@@ -18,8 +18,11 @@ pip install -r requirements.txt
 BUDGET_DB=data/budget.db uvicorn app.main:app --port 8000
 ```
 
-Puis **Réglages & import** : envoyer l'export CSV Banque Populaire (compte courant). Réimporter un
-fichier qui chevauche le précédent est sans risque (doublons ignorés).
+Puis **Réglages & import** (ou glisser les fichiers dans la barre latérale) : export CSV Banque Populaire
+(compte courant) et export PayPal « Activité / Transactions ». Le type de fichier est détecté tout seul ;
+réimporter un fichier qui chevauche le précédent est sans risque (doublons ignorés). Les prélèvements
+« PayPal » de la banque sont rattachés à leur commerçant (même montant, 0 à 12 jours plus tôt), et les
+paiements en 4 fois apparaissent comme engagements à venir.
 En ligne de commande : `python -m app.cli import data/export.csv`.
 
 ## Comment c'est calculé

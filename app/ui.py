@@ -50,6 +50,7 @@ CATEGORY_STYLE = {
     "Shopping": ("bag", "#c084fc"),
     "PayPal (à détailler)": ("card", "#f472b6"),
     "Loisirs & vacances": ("play", "#fbbf24"),
+    "Abonnements & services": ("repeat", "#84cc16"),
     "Juridique": ("scale", "#a78bfa"),
     "Famille & amis": ("users", "#fb7185"),
     "À catégoriser": ("help", "#94a3b8"),
